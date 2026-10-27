@@ -52,6 +52,7 @@ sysroot(
 rust_dist(
     name = "dist",
     deps = [
+        ":clippy-driver",
         ":rustc",
         ":rustdoc",
         ":sysroot",
