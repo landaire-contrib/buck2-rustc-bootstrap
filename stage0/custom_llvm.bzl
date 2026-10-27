@@ -37,7 +37,7 @@ _custom_llvm = rule(
         "jobs": attrs.int(),
         "source": attrs.dep(),
         "_builder": attrs.source(default = "//stage0:build_custom_llvm.py"),
-        "_python_bootstrap_toolchain": attrs.exec_dep(
+        "_python_bootstrap_toolchain": attrs.toolchain_dep(
             default = "rustc_toolchains//:python_bootstrap",
             providers = [PythonBootstrapToolchainInfo],
         ),
