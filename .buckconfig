@@ -1,7 +1,7 @@
 [cells]
 rust = .
 prelude = prelude
-toolchains = toolchains
+rustc_toolchains = toolchains
 none = none
 
 [external_cells]

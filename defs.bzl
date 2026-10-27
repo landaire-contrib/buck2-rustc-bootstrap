@@ -75,7 +75,7 @@ def rust_bootstrap_library(
             "//constraints:stage2": "(buckified stage2)",
         })
         extra_env["CFG_COMPILER_HOST_TRIPLE"] = "$(target_triple)"
-        extra_deps.append("toolchains//target:rustc_target_triple")
+        extra_deps.append("rustc_toolchains//target:rustc_target_triple")
     else:
         default_target_platform = None
         extra_rustc_flags.append("--cap-lints=allow")
@@ -139,7 +139,7 @@ def cxx_bootstrap_library(
         target_compatible_with = [],
         visibility = None,
         **kwargs):
-    extra_deps = ["toolchains//cxx:stdlib"]
+    extra_deps = ["rustc_toolchains//cxx:stdlib"]
 
     target_compatible_with = [
         select({
@@ -163,7 +163,7 @@ def cxx_bootstrap_library(
     transition_alias(
         name = name,
         actual = ":{}-compile".format(name),
-        incoming_transition = "toolchains//cxx:prune_cxx_configuration",
+        incoming_transition = "rustc_toolchains//cxx:prune_cxx_configuration",
         default_target_platform = "//platforms:host",
         target_compatible_with = target_compatible_with,
         visibility = visibility,
