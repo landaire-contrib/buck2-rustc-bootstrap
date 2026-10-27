@@ -68,7 +68,7 @@ stage0_sysroot(
 
 external_llvm(
     name = "ci_llvm",
-    llvm = "xbox360//toolchains:custom-llvm",
+    llvm = "toolchains//:custom-llvm",
     visibility = ["PUBLIC"],
 )
 
