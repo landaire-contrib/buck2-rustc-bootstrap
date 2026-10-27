@@ -361,17 +361,3 @@ ci_llvm = rule(
     supports_incoming_transition = True,
 )
 
-def _external_llvm_impl(ctx: AnalysisContext) -> list[Provider]:
-    llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
-    return [
-        DefaultInfo(default_output = llvm),
-        RustDistInfo(artifacts = {"lib": llvm.project("lib")}),
-    ]
-
-external_llvm = rule(
-    impl = _external_llvm_impl,
-    attrs = {
-        "llvm": attrs.dep(),
-    },
-    supports_incoming_transition = True,
-)

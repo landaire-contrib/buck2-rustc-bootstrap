@@ -2,7 +2,6 @@
 rust = .
 prelude = prelude
 rustc_toolchains = toolchains
-xbox_toolchains = ../../toolchains
 none = none
 
 [external_cells]

@@ -1,12 +1,12 @@
 load("//constraints:defs.bzl", "configuration_transition")
 load(
     ":defs.bzl",
-    "external_llvm",
     "stage0_download",
     "stage0_executable",
     "stage0_extract",
     "stage0_sysroot",
 )
+load(":custom_llvm.bzl", "custom_llvm")
 
 configuration_transition(
     name = "stage0_configuration",
@@ -66,9 +66,9 @@ stage0_sysroot(
     visibility = ["PUBLIC"],
 )
 
-external_llvm(
+custom_llvm(
     name = "ci_llvm",
-    llvm = "xbox_toolchains//:custom-llvm",
+    jobs = int(read_root_config("xbox360", "toolchain_jobs", "4")),
     visibility = ["PUBLIC"],
 )
 
