@@ -8,6 +8,10 @@ load(
 )
 load(":custom_llvm.bzl", "custom_llvm")
 
+export_file(
+    name = "build_custom_llvm.py",
+)
+
 configuration_transition(
     name = "stage0_configuration",
     add_fallback_settings = "//platforms:host",
