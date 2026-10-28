@@ -25,6 +25,7 @@ RustDistInfo = provider(fields = {
 })
 
 def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
+    cxx_runtime = ctx.attrs.cxx_runtime
     llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
     exe = ctx.attrs.exe[DefaultInfo].default_outputs[0]
 
@@ -40,6 +41,7 @@ def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
             ["--cp", "{exe}", "{dist}/bin/" + ctx.label.name],
             ["--symlink", "{llvm}/lib", "{dist}/lib"],
             ["--elaborate", "{dist}/lib"],
+            ["--cp", cxx_runtime, "{dist}/lib/libstdc++.so.6"],
         ],
         category = "dist",
     )
@@ -61,6 +63,7 @@ def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
 rust_tool = rule(
     impl = _rust_tool_impl,
     attrs = {
+        "cxx_runtime": attrs.source(default = "//stage0:host-libstdc++.so.6"),
         "exe": attrs.dep(),
         "llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
@@ -125,7 +128,16 @@ def _rust_dist_impl(ctx: AnalysisContext) -> list[Provider]:
         ["--mkdir", "{dist}"],
     ]
     llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
-    script.extend(["--symlink", llvm.project("lib"), "{dist}/lib"])
+    script.extend([
+        "--symlink",
+        cmd_args(llvm.project("lib"), relative_to = dist),
+        "{dist}/lib",
+        "--elaborate",
+        "{dist}/lib",
+        "--cp",
+        ctx.attrs.cxx_runtime,
+        "{dist}/lib/libstdc++.so.6",
+    ])
 
     for dep in ctx.attrs.deps:
         for relative_path, artifact in dep[RustDistInfo].artifacts.items():
@@ -137,6 +149,7 @@ def _rust_dist_impl(ctx: AnalysisContext) -> list[Provider]:
 rust_dist = rule(
     impl = _rust_dist_impl,
     attrs = {
+        "cxx_runtime": attrs.source(default = "//stage0:host-libstdc++.so.6"),
         "deps": attrs.set(attrs.dep(providers = [RustDistInfo])),
         "llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),

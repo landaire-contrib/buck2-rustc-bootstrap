@@ -12,6 +12,11 @@ export_file(
     name = "build_custom_llvm.py",
 )
 
+export_file(
+    name = "host-libstdc++.so.6",
+    visibility = ["PUBLIC"],
+)
+
 configuration_transition(
     name = "stage0_configuration",
     add_fallback_settings = "//platforms:host",
