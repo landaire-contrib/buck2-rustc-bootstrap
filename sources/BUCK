@@ -3,14 +3,14 @@ load(":defs.bzl", "rust_checkout", "rust_source_files", "rust_version_flags")
 
 # The Rust fork and the library/backtrace submodule at the commit that the
 # fork records for it.
-_RUST_COMMIT = "e52263c3cec8ece1b4b0ff1b00d56c0b5218d498"
+_RUST_COMMIT = "a199a11abab9720154e5e2eff1887960432e8c95"
 
 _BACKTRACE_COMMIT = "d902726a1dcdc1e1c66f73d1162181b5423c645b"
 
 crate_download(
     name = "rust",
-    sha256 = "6704c8d705c1f001669af05ef22d2ba657f2147ec62bf6f9a8ac23e2f99931d4",
-    size_bytes = 39206804,
+    sha256 = "e4d7be0a58e41a71604779a05177e11b8d67d9fad787b6d54e57d23fd3a71205",
+    size_bytes = 39212238,
     strip_prefix = "rust-" + _RUST_COMMIT,
     urls = ["https://github.com/landaire/rust/archive/{}.tar.gz".format(_RUST_COMMIT)],
     visibility = ["PUBLIC"],
