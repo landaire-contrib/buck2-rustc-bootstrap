@@ -11,6 +11,7 @@ load(
 llvm_install(
     name = "llvm-install",
     llvm = "//stage0:ci_llvm",
+    visibility = ["PUBLIC"],
 )
 
 llvm_config(
