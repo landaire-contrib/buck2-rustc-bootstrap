@@ -42,10 +42,11 @@ _custom_llvm = rule(
             providers = [PythonBootstrapToolchainInfo],
         ),
     },
+    supports_incoming_transition = True,
 )
 
 
-def custom_llvm(name, jobs, visibility):
+def custom_llvm(name, jobs, visibility, incoming_transition):
     native.http_archive(
         name = name + "-source",
         sha256 = _LLVM_SHA256,
@@ -56,5 +57,6 @@ def custom_llvm(name, jobs, visibility):
         name = name,
         jobs = jobs,
         source = ":" + name + "-source",
+        incoming_transition = incoming_transition,
         visibility = visibility,
     )

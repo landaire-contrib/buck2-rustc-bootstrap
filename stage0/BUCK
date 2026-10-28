@@ -73,6 +73,7 @@ stage0_sysroot(
 custom_llvm(
     name = "ci_llvm",
     jobs = int(read_root_config("xbox360", "toolchain_jobs", "4")),
+    incoming_transition = ":stage0_configuration",
     visibility = ["PUBLIC"],
 )
 
