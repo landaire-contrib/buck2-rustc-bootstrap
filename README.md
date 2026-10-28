@@ -78,6 +78,23 @@ Most targets have a `default_target_platform` set so `--target-platforms` should
 usually not need to be specified. Use the modifier `-m=stage2` to replace the
 default stage1 target platform with the corresponding stage2 one.
 
+## Xbox 360 LLVM
+
+The `xbox360-rust-1.98` branch builds its pinned LLVM fork through a local
+CMake/Ninja action. Rust crates remain native Buck actions. CMake state is kept
+outside `buck-out` in
+`$XDG_CACHE_HOME/buck2-rustc-bootstrap/xbox360-llvm`, or under `~/.cache` when
+`XDG_CACHE_HOME` is unset. A changed LLVM archive is mirrored into that stable
+source tree without changing the timestamps of identical files, which allows
+Ninja to rebuild only changed sources.
+
+Set a different persistent location in the root Buck configuration when needed:
+
+```ini
+[xbox360]
+  llvm_cache = /path/to/cache
+```
+
 ## Cross-compilation
 
 This project is set up with a bare-bones C++ toolchain that relies on a system
