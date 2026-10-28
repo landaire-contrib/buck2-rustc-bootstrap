@@ -56,6 +56,7 @@ def main() -> int:
         ]
     )
     run(["cmake", "--build", str(build), "--target", "install", "--parallel", str(args.jobs)])
+    (install / "link-type.txt").write_text("static\n", encoding="utf-8")
 
     required = [
         "FileCheck",
