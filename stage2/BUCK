@@ -51,9 +51,9 @@ sysroot(
 
 rust_dist(
     name = "dist",
+    llvm = "//stage0:ci_llvm",
     deps = [
         ":rustc",
         ":sysroot",
-        "//stage0:ci_llvm",
     ],
 )

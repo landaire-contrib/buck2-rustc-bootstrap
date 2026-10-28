@@ -2,14 +2,20 @@ load(
     ":defs.bzl",
     "llvm_config",
     "llvm_cxx_flags",
+    "llvm_install",
     "llvm_linker_flags",
     "llvm_preprocessor_flags",
     "llvm_rustc_flags",
 )
 
+llvm_install(
+    name = "llvm-install",
+    llvm = "//stage0:ci_llvm",
+)
+
 llvm_config(
     name = "llvm-config",
-    llvm = "//stage0:ci_llvm",
+    llvm = ":llvm-install",
 )
 
 llvm_rustc_flags(
@@ -33,13 +39,13 @@ llvm_preprocessor_flags(
 llvm_linker_flags(
     name = "linker-flags",
     host_llvm_config = ":llvm-config",
-    target_llvm = "//stage0:ci_llvm",
+    target_llvm = ":llvm-install",
 )
 
 prebuilt_cxx_library(
     name = "llvm",
     exported_linker_flags = [
-        "-L$(location //stage0:ci_llvm)/lib",
+        "-L$(location :llvm-install)/lib",
         "-lz",
         "@$(location :linker-flags)",
     ],

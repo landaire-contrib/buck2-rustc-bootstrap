@@ -8,6 +8,14 @@ def _llvm_config_impl(ctx: AnalysisContext) -> list[Provider]:
         RunInfo(llvm_config),
     ]
 
+def _llvm_install_impl(ctx: AnalysisContext) -> list[Provider]:
+    return [DefaultInfo(default_output = ctx.attrs.llvm[DefaultInfo].default_outputs[0])]
+
+llvm_install = rule(
+    impl = _llvm_install_impl,
+    attrs = {"llvm": attrs.exec_dep()},
+)
+
 llvm_config = rule(
     impl = _llvm_config_impl,
     attrs = {"llvm": attrs.dep()},
@@ -246,7 +254,7 @@ llvm_linker_flags = rule(
     impl = _llvm_linker_flags_impl,
     attrs = {
         "host_llvm_config": attrs.exec_dep(providers = [RunInfo]),
-        "target_llvm": attrs.dep(),
+        "target_llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
         "_redirect_stdout": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "prelude//rust/tools:redirect_stdout")),
     },

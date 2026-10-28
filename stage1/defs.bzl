@@ -62,7 +62,7 @@ rust_tool = rule(
     impl = _rust_tool_impl,
     attrs = {
         "exe": attrs.dep(),
-        "llvm": attrs.dep(),
+        "llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
     },
     supports_incoming_transition = True,
@@ -124,6 +124,8 @@ def _rust_dist_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd_args(dist.as_output(), format = "dist={}"),
         ["--mkdir", "{dist}"],
     ]
+    llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
+    script.extend(["--symlink", llvm.project("lib"), "{dist}/lib"])
 
     for dep in ctx.attrs.deps:
         for relative_path, artifact in dep[RustDistInfo].artifacts.items():
@@ -136,6 +138,7 @@ rust_dist = rule(
     impl = _rust_dist_impl,
     attrs = {
         "deps": attrs.set(attrs.dep(providers = [RustDistInfo])),
+        "llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
     },
 )

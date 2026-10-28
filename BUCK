@@ -10318,7 +10318,7 @@ cxx_bootstrap_library(
     ],
     compiler_flags = ["--config=$(location //fixups/rustc_llvm:cxx-flags)"],
     preprocessor_flags = [
-        "-I$(location //stage0:ci_llvm)/include",
+        "-I$(location //fixups/rustc_llvm:llvm-install)/include",
         "--config=$(location //fixups/rustc_llvm:preprocessor-flags)",
     ],
     visibility = [],
