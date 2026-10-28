@@ -4,7 +4,7 @@ load(
     "RustExplicitSysrootDeps",
     "RustToolchainInfo",
 )
-load("//target:target_triple.bzl", "TargetTriple")
+load("//toolchains/target:target_triple.bzl", "TargetTriple")
 
 RustcFlags = provider(fields = {
     "flags": list[str],
@@ -85,7 +85,7 @@ rust_toolchain = rule(
             attrs.option(attrs.dep()),
             attrs.dict(key = attrs.string(), value = _can_keep(attrs.dep())),
         ),
-        "target_triple": attrs.default_only(attrs.dep(providers = [TargetTriple], default = "//target:rustc_target_triple")),
+        "target_triple": attrs.default_only(attrs.dep(providers = [TargetTriple], default = "//toolchains/target:rustc_target_triple")),
     },
     is_toolchain_rule = True,
 )

@@ -6,27 +6,34 @@ load(
 load("@prelude//platforms:defs.bzl", "host_configuration")
 
 def platform_info_label(constraints: dict[TargetLabel, ConstraintValueInfo]) -> str:
+    # Keyed by package and name: the cell name of this repository depends on
+    # the project that uses it.
     settings = {}
+    cell = None
     for constraint in constraints.values():
+        setting = constraint.setting.label
+        key = "{}:{}".format(setting.package, setting.name)
+        if key == "constraints:bootstrap":
+            cell = setting.cell
         if constraint.label.sub_target:
-            settings[str(constraint.setting.label)] = "-".join(constraint.label.sub_target)
+            settings[key] = "-".join(constraint.label.sub_target)
         else:
-            settings[str(constraint.setting.label)] = constraint.label.name
+            settings[key] = constraint.label.name
 
-    stage = settings.get("rust//constraints:bootstrap-stage")
-    workspace = settings.get("rust//constraints:workspace")
-    build_script = settings.get("rust//constraints:build-script")
-    os = settings.get("prelude//os/constraints:os")
-    cpu = settings.get("prelude//cpu/constraints:cpu")
+    stage = settings.get("constraints:bootstrap-stage")
+    workspace = settings.get("constraints:workspace")
+    build_script = settings.get("constraints:build-script")
+    os = settings.get("os/constraints:os")
+    cpu = settings.get("cpu/constraints:cpu")
 
     host_os = host_configuration.os.split(":")[1]
     host_cpu = host_configuration.cpu.split(":")[1]
 
-    if not stage and not workspace and not build_script and os == host_os and cpu == host_cpu:
-        return "rust//platforms:host"
+    if cell and not stage and not workspace and not build_script and os == host_os and cpu == host_cpu:
+        return "{}//platforms:host".format(cell)
 
-    if stage and workspace and build_script:
-        label = "rust//platforms/{}:{}".format(stage, workspace)
+    if cell and stage and workspace and build_script:
+        label = "{}//platforms/{}:{}".format(cell, stage, workspace)
         if build_script == "build-script=true":
             label += "-build-script"
         return label
@@ -41,6 +48,15 @@ def platform_info_label(constraints: dict[TargetLabel, ConstraintValueInfo]) -> 
         return "null"
 
     return "cfg"
+
+def set_standalone_cfg_constructor(**kwargs):
+    """Installs a configuration constructor when this is the root cell.
+
+    Only the root cell's package file may install one, so a parent project
+    that uses this repository as a cell keeps its own.
+    """
+    if read_root_config("cells", "rust") == ".":
+        native.set_cfg_constructor(**kwargs)
 
 def cfg_constructor_post_constraint_analysis(
         *,

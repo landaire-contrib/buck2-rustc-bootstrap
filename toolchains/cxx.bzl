@@ -17,7 +17,17 @@ load("@prelude//linking:link_info.bzl", "LinkStyle")
 load("@prelude//linking:lto.bzl", "LtoMode")
 load("@prelude//os_lookup:defs.bzl", "Os", "OsLookup")
 load("@prelude//toolchains:cxx.bzl", "CxxToolsInfo")
-load("//target:target_triple.bzl", "TargetTriple")
+load("//toolchains/target:target_triple.bzl", "TargetTriple")
+
+def _default_cxx_tools():
+    if host_info().os.is_windows:
+        return "prelude//toolchains/msvc:msvc_tools"
+
+    # The compiler's C++ code is built with the clang of the LLVM that it
+    # links.
+    if host_info().os.is_linux:
+        return "//stage0:ci_llvm-cxx-tools"
+    return "prelude//toolchains/cxx/clang:path_clang_tools"
 
 def _cxx_toolchain_impl(ctx: AnalysisContext):
     target = ctx.attrs._target_os_type[OsLookup]
@@ -116,8 +126,8 @@ cxx_toolchain = rule(
         "c_flags": attrs.list(attrs.arg(), default = []),
         "cxx_flags": attrs.list(attrs.arg(), default = []),
         "linker_flags": attrs.list(attrs.arg(), default = []),
-        "target_triple": attrs.default_only(attrs.dep(providers = [TargetTriple], default = "//target:clang_target_triple")),
-        "_cxx_tools_info": attrs.exec_dep(providers = [CxxToolsInfo], default = "prelude//toolchains/msvc:msvc_tools" if host_info().os.is_windows else "prelude//toolchains/cxx/clang:path_clang_tools"),
+        "target_triple": attrs.default_only(attrs.dep(providers = [TargetTriple], default = "//toolchains/target:clang_target_triple")),
+        "_cxx_tools_info": attrs.exec_dep(providers = [CxxToolsInfo], default = _default_cxx_tools()),
         "_internal_tools": attrs.default_only(attrs.exec_dep(providers = [CxxInternalTools], default = "prelude//cxx/tools:internal_tools")),
         "_target_os_type": attrs.default_only(attrs.dep(providers = [OsLookup], default = "prelude//os_lookup/targets:os_lookup")),
     },

@@ -4,10 +4,10 @@ load("@prelude//linking:shared_libraries.bzl", "SharedLibraryInfo")
 load("@prelude//rust:build_params.bzl", "MetadataKind")
 load("@prelude//rust:crate_name.bzl", "CrateName")
 load("@prelude//rust:link_info.bzl", "RustLinkInfo", "RustLinkStrategyInfo")
-load("@toolchains//:rust.bzl", "RustcFlags")
+load("//toolchains:rust.bzl", "RustcFlags")
 
 def keep(default: str) -> (str, str):
-    stage, _subtarget = default.removeprefix("rust//").split(":")
+    stage, _subtarget = default.removeprefix("//").split(":")
     if stage not in ["stage1", "stage2"]:
         fail("unexpected keep target:", default)
     return (default, stage)

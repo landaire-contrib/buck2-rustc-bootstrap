@@ -25,7 +25,6 @@ RustDistInfo = provider(fields = {
 })
 
 def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
-    cxx_runtime = ctx.attrs.cxx_runtime
     llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
     exe = ctx.attrs.exe[DefaultInfo].default_outputs[0]
 
@@ -40,8 +39,6 @@ def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
             ["--mkdir", "{dist}/bin"],
             ["--cp", "{exe}", "{dist}/bin/" + ctx.label.name],
             ["--symlink", "{llvm}/lib", "{dist}/lib"],
-            ["--elaborate", "{dist}/lib"],
-            ["--cp", cxx_runtime, "{dist}/lib/libstdc++.so.6"],
         ],
         category = "dist",
     )
@@ -63,7 +60,6 @@ def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
 rust_tool = rule(
     impl = _rust_tool_impl,
     attrs = {
-        "cxx_runtime": attrs.source(default = "//stage0:host-libstdc++.so.6"),
         "exe": attrs.dep(),
         "llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
@@ -115,7 +111,7 @@ sysroot = rule(
         "deps": attrs.set(attrs.dep()),
         "named_deps": attrs.default_only(attrs.dict(key = attrs.string(), value = attrs.dep(), default = {})),
         "flagged_deps": attrs.default_only(attrs.set(attrs.tuple(attrs.dep(), attrs.list(attrs.string())), default = [])),
-        "rust_toolchain": attrs.default_only(attrs.toolchain_dep(providers = [RustToolchainInfo], default = "toolchains//:rust")),
+        "rust_toolchain": attrs.default_only(attrs.toolchain_dep(providers = [RustToolchainInfo], default = "//toolchains:rust")),
     },
     supports_incoming_transition = True,
 )
@@ -134,9 +130,6 @@ def _rust_dist_impl(ctx: AnalysisContext) -> list[Provider]:
         "{dist}/lib",
         "--elaborate",
         "{dist}/lib",
-        "--cp",
-        ctx.attrs.cxx_runtime,
-        "{dist}/lib/libstdc++.so.6",
     ])
 
     for dep in ctx.attrs.deps:
@@ -149,7 +142,6 @@ def _rust_dist_impl(ctx: AnalysisContext) -> list[Provider]:
 rust_dist = rule(
     impl = _rust_dist_impl,
     attrs = {
-        "cxx_runtime": attrs.source(default = "//stage0:host-libstdc++.so.6"),
         "deps": attrs.set(attrs.dep(providers = [RustDistInfo])),
         "llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),

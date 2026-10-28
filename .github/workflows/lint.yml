@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: dtolnay/install@reindeer
-      - name: git submodule init
+      - name: Rust source checkout
         uses: ./.github/actions/checkout
       - run: reindeer buckify
       - name: Check reindeer-generated BUCK file up to date
@@ -69,7 +69,5 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/install-buck2@latest
-      - name: git submodule init
-        uses: ./.github/actions/checkout
       - run: buck2 uquery ...
       - run: buck2 cquery ...

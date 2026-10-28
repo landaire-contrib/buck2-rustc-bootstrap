@@ -1,14 +1,8 @@
-name: git submodule init
+name: Rust source checkout
 
 runs:
   using: composite
   steps:
-    - uses: dtolnay/.github/.github/actions/fast-submodule@master
-      with:
-        submodule: rust
-    - run: git -C rust log --all
+    - uses: dtolnay/install-buck2@latest
+    - run: buck2 build sources:checkout --out rust
       shell: bash
-    - uses: dtolnay/.github/.github/actions/fast-submodule@master
-      with:
-        working-directory: rust
-        submodule: library/backtrace

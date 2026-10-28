@@ -1,18 +1,18 @@
-load("@rust//constraints:defs.bzl", "configuration_transition")
+load("//constraints:defs.bzl", "configuration_transition")
 
 # Transition to share identical C++ compilations between stage1 and stage2.
 configuration_transition(
     name = "prune_cxx_configuration",
     discard_settings = [
-        "rust//constraints:bootstrap-stage",
-        "rust//constraints:build-script",
-        "rust//constraints:workspace",
+        "//constraints:bootstrap-stage",
+        "//constraints:build-script",
+        "//constraints:workspace",
     ],
 )
 
 prebuilt_cxx_library(
     name = "stdlib",
-    default_target_platform = "rust//platforms:host",
+    default_target_platform = "//platforms:host",
     exported_linker_flags = select({
         "DEFAULT": None,
         "prelude//os:linux": ["-lstdc++"],

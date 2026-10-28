@@ -21,6 +21,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/install-buck2@latest
-      - name: git submodule init
-        uses: ./.github/actions/checkout
       - run: buck2 run stage2:rustc -- --version --verbose

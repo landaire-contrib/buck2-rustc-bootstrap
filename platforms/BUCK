@@ -4,6 +4,7 @@ load(":defs.bzl", "execution_platform", "execution_platforms")
 execution_platform(
     name = "host",
     constraint_values = [
+        "//constraints:bootstrap=true",
         host_configuration.cpu,
         host_configuration.os,
     ],
@@ -19,4 +20,5 @@ execution_platforms(
         "//platforms/stage2:compiler-build-script",
         "//platforms/stage2:library-build-script",
     ],
+    visibility = ["PUBLIC"],
 )

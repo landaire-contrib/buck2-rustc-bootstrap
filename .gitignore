@@ -5,5 +5,5 @@
 /rustc-ice-*
 /vendor/
 reindeer:!/vendor/
-/stage0/host-libstdc++.so.6
+/rust/
 __pycache__/

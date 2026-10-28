@@ -15,7 +15,7 @@ transition_alias(
     name = "rust_allocator",
     actual = "//allocator:rust_allocator",
     incoming_transition = "//platforms/stage2:library",
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
 )
 
 rust_tool(
@@ -23,7 +23,7 @@ rust_tool(
     exe = "//:rustc-main-rustc-main",
     incoming_transition = "//platforms/stage2:compiler",
     llvm = "//stage0:ci_llvm",
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
 )
 
 rust_tool(
@@ -31,7 +31,7 @@ rust_tool(
     exe = "//:rustdoc-tool-rustdoc_tool_binary",
     incoming_transition = "//platforms/stage2:compiler",
     llvm = "//stage0:ci_llvm",
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
 )
 
 rust_tool(
@@ -39,13 +39,13 @@ rust_tool(
     exe = "//:clippy-clippy-driver",
     incoming_transition = "//platforms/stage2:compiler",
     llvm = "//stage0:ci_llvm",
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
 )
 
 sysroot(
     name = "sysroot",
     incoming_transition = "//platforms/stage2:library",
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
     deps = [":{}".format(crate) for crate in SYSROOT_CRATES],
 )
 

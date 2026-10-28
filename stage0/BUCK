@@ -12,11 +12,6 @@ export_file(
     name = "build_custom_llvm.py",
 )
 
-export_file(
-    name = "host-libstdc++.so.6",
-    visibility = ["PUBLIC"],
-)
-
 configuration_transition(
     name = "stage0_configuration",
     add_fallback_settings = "//platforms:host",
@@ -35,7 +30,7 @@ stage0_download(
         "rustc",
     ],
     incoming_transition = ":stage0_configuration",
-    manifest = "//:stage0_manifest",
+    manifest = "//sources:tree[src/stage0]",
 )
 
 stage0_extract(
@@ -77,7 +72,7 @@ stage0_sysroot(
 
 custom_llvm(
     name = "ci_llvm",
-    jobs = int(read_root_config("xbox360", "toolchain_jobs", "4")),
+    jobs = int(read_root_config("xbox360", "toolchain_jobs", "8")),
     cache = read_root_config("xbox360", "llvm_cache", ""),
     incoming_transition = ":stage0_configuration",
     visibility = ["PUBLIC"],

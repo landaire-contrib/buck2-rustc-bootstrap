@@ -1,0 +1,14 @@
+load(":defs.bzl", "forward_toolchains")
+
+# The toolchains cell of a standalone build, which the prelude's rules use.
+# A project that includes this repository as a cell forwards its own
+# toolchains cell to //toolchains for configurations of this cell.
+forward_toolchains(
+    names = [
+        "cxx",
+        "python_bootstrap",
+        "remote_test_execution",
+        "rust",
+        "test",
+    ],
+)

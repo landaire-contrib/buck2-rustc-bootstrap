@@ -1,5 +1,12 @@
 load(":defs.bzl", "constraint")
 
+# Part of every platform of this cell, so that a parent project's toolchains
+# cell can select this cell's toolchains with it.
+constraint(
+    setting = "bootstrap",
+    values = ["bootstrap=true"],
+)
+
 constraint(
     setting = "workspace",
     values = [

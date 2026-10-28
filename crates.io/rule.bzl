@@ -8,6 +8,7 @@ def _crate_download_impl(ctx: AnalysisContext) -> list[Provider]:
         archive.as_output(),
         ctx.attrs.urls[0],
         sha256 = ctx.attrs.sha256,
+        size_bytes = ctx.attrs.size_bytes,
     )
 
     output, sub_targets = unarchive(
@@ -32,6 +33,9 @@ crate_download = rule(
     attrs = {
         "_exec_deps": attrs.default_only(attrs.exec_dep(providers = [HttpArchiveExecDeps], default = "//platforms/exec:http_archive")),
         "sha256": attrs.string(),
+        # Required for servers that do not report the length of a download,
+        # such as GitHub's source archives.
+        "size_bytes": attrs.option(attrs.int(), default = None),
         "strip_prefix": attrs.string(),
         "sub_targets": attrs.set(attrs.string(), default = []),
         "urls": attrs.list(attrs.string()),

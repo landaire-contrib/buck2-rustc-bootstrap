@@ -10,12 +10,6 @@ load(
     "rust_bootstrap_library",
 )
 
-export_file(
-    name = "stage0_manifest",
-    src = "rust/src/stage0",
-    visibility = ["//stage0:"],
-)
-
 rust_bootstrap_library(
     name = "rustc_driver-0.0.0",
     srcs = ["rust/compiler/rustc_driver/src/lib.rs"],

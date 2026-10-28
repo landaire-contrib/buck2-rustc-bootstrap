@@ -2,7 +2,7 @@ load(":target_triple.bzl", "target_triple")
 
 target_triple(
     name = "rustc_target_triple",
-    incoming_transition = "rust//stage0:stage0_configuration",
+    incoming_transition = "//stage0:stage0_configuration",
     value = select({
         "prelude//os:linux": select({
             "prelude//cpu:arm64": "aarch64-unknown-linux-gnu",
@@ -23,7 +23,7 @@ target_triple(
 
 target_triple(
     name = "clang_target_triple",
-    incoming_transition = "rust//stage0:stage0_configuration",
+    incoming_transition = "//stage0:stage0_configuration",
     value = select({
         # Different from rustc triple: `unknown` -> `pc`
         "prelude//os:linux": select({

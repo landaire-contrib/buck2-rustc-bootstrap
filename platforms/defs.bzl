@@ -1,5 +1,21 @@
-load("//remote_execution:config.bzl", "executor_config")
 load(":name.bzl", "platform_info_label")
+
+# The compiler links the LLVM that //stage0:ci_llvm builds with the host's C++
+# compiler and runtime, so actions run on the host and their results are not
+# uploaded to a shared cache.
+def _executor_config(configuration: ConfigurationInfo) -> CommandExecutorConfig:
+    use_windows_path_separators = False
+    for value in configuration.constraints.values():
+        if str(value.label) == "prelude//os/constraints:os[windows]":
+            use_windows_path_separators = True
+
+    return CommandExecutorConfig(
+        local_enabled = True,
+        remote_enabled = False,
+        remote_cache_enabled = False,
+        allow_cache_uploads = False,
+        use_windows_path_separators = use_windows_path_separators,
+    )
 
 def _platform_impl(ctx: AnalysisContext) -> list[Provider]:
     platform_label = ctx.label.raw_target()
@@ -47,7 +63,7 @@ def _platform_impl(ctx: AnalysisContext) -> list[Provider]:
         [ExecutionPlatformInfo(
             label = platform_label,
             configuration = configuration,
-            executor_config = executor_config(configuration),
+            executor_config = _executor_config(configuration),
         )] if ctx.attrs.execution_platform else []
     )
 

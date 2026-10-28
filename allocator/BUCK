@@ -16,11 +16,11 @@ rust_library(
     ],
     visibility = ["PUBLIC"],
     deps = select({
-        "rust//constraints:library": [
+        "//constraints:library": [
             "//:alloc",
             "//:std",
         ],
-        "rust//constraints:library-build-script": [],
-        "rust//constraints:compiler": [],
+        "//constraints:library-build-script": [],
+        "//constraints:compiler": [],
     }),
 )

@@ -78,22 +78,72 @@ Most targets have a `default_target_platform` set so `--target-platforms` should
 usually not need to be specified. Use the modifier `-m=stage2` to replace the
 default stage1 target platform with the corresponding stage2 one.
 
-## Xbox 360 LLVM
+## Xbox 360 branch
 
-The `xbox360-rust-1.98` branch builds its pinned LLVM fork through a local
-CMake/Ninja action. Rust crates remain native Buck actions. CMake state is kept
-outside `buck-out` in
+### Sources
+
+The `xbox360-rust-1.98` branch has no submodules. `sources/BUCK` downloads the
+Rust fork and its `library/backtrace` submodule as archives pinned by SHA-256,
+and the paths under `rust/` in the generated `BUCK` name files of that tree.
+`reindeer buckify` needs the tree on disk:
+
+```console
+$ buck2 build sources:checkout --out rust
+$ reindeer buckify
+```
+
+### LLVM
+
+`stage0/custom_llvm.bzl` pins the LLVM fork, and the CMake and Ninja that
+build it, as SHA-256-checked archives. LLVM uses its CMake/Ninja build in one
+local action, with the host's `cc` and `c++` from `PATH`, so it builds only on
+x86_64 Linux and its result is never uploaded to a cache; the other platforms
+stop during analysis. On Linux the compiler's C++ code is compiled and linked
+with the clang of that LLVM. Every action of this branch runs locally.
+
+The host C and C++ toolchain (compilers, linker, archiver, headers and C++
+runtime) is an undeclared input of that action: Buck does not track it, so a
+changed host toolchain does not rerun the action by itself. Run `buck2 clean`
+or change the pin after updating it.
+
+The CMake build tree persists in
 `$XDG_CACHE_HOME/buck2-rustc-bootstrap/xbox360-llvm`, or under `~/.cache` when
-`XDG_CACHE_HOME` is unset. A changed LLVM archive is mirrored into that stable
-source tree without changing the timestamps of identical files, which allows
-Ninja to rebuild only changed sources.
-
-Set a different persistent location in the root Buck configuration when needed:
+`XDG_CACHE_HOME` is unset, in a directory keyed by the complete configuration
+but not by the LLVM sources: the CMake flags; the CMake, Ninja and Python
+versions; and the SHA-256 of the host `cc`, `c++`, `cc1`, `cc1plus`, `ld`,
+`ar`, `ranlib` and the `libstdc++.so` that `c++` links, resolved through the
+action's `PATH`. Headers are not part of the key. A changed LLVM archive is
+mirrored into the tree without touching unchanged files, so Ninja rebuilds
+only what the change affects. Trees of other keys are removed. Each build
+installs into a fresh Buck output. Set the location and the job count in the
+root Buck configuration when needed:
 
 ```ini
 [xbox360]
   llvm_cache = /path/to/cache
+  toolchain_jobs = 8
 ```
+
+### Use as a cell
+
+A project can build the compiler in its own build by adding this repository
+as a cell, for example as a Git external cell named `rustc_bootstrap`. Only
+the `[cell_aliases]` of this repository's `.buckconfig` apply then, so the
+project must also:
+
+- name `prelude` and `none` cells, as this repository's aliases refer to them;
+- register `rustc_bootstrap//platforms:execution` after its own execution
+  platforms;
+- forward its `toolchains//:rust` and `toolchains//:cxx` to
+  `rustc_bootstrap//toolchains:rust` and `:cxx` for configurations with
+  `rustc_bootstrap//constraints:bootstrap=true`, because the prelude's rules
+  use the root project's toolchains cell.
+
+[rust-xbox360] does this in its `xbox360_toolchains()` and
+`xbox360//platforms:execution`. `stage1:dist` is the compiler distribution and
+`stage0:ci_llvm` the LLVM installation.
+
+[rust-xbox360]: https://github.com/landaire/rust-xbox360
 
 ## Cross-compilation
 
@@ -260,47 +310,6 @@ At least 2 factors contribute to x.py's overhead:
   Cargo reloads the world each time it runs, including parsing Cargo.toml files
   and lockfiles and Cargo config files. And as mentioned, x.py will do multiple
   of these Cargo invocations serially.
-
-## Remote execution
-
-With remote execution, your build can be distributed across a pool of remote
-cores that is larger than what is available on your local machine, and can
-leverage a remote cache to skip over build steps that have already previously
-succeeded.
-
-Remote execution _does not_ involve naively uploading and downloading the input
-and output of every compiler command. The bytes stay in the cloud, and only
-small checksums are received by your machine, as well as the end result of the
-build (which you can skip with `--materializations=none` or `-M none` when you
-only care about the success or compiler diagnostics, not the resulting binary).
-
-To enable remote execution, add the following 4 entries to `.buckconfig.local`
-in the repo root, using values given by your remote execution provider. The
-format for some specific services is shown below, but anything that supports
-Bazel's [remote execution API] is likely to work.
-
-[remote execution API]: https://github.com/bazelbuild/remote-apis
-
-**BuildBuddy** has a generous free tier with 80 cores of parallelism on fast
-machines, and is easy to sign up for.
-
-```ini
-[buck2_re_client]
-engine_address = remote.buildbuddy.io
-action_cache_address = remote.buildbuddy.io
-cas_address = remote.buildbuddy.io
-http_headers = x-buildbuddy-api-key:zzzzzzzzzzzzzzzzzzzz
-```
-
-**NativeLink**
-
-```ini
-[buck2_re_client]
-engine_address = scheduler-whoami-zzzzzz.build-faster.nativelink.net
-action_cache_address = cas-whoami-zzzzzz.build-faster.nativelink.net
-cas_address = cas-whoami-zzzzzz.build-faster.nativelink.net
-http_headers = x-nativelink-api-key:zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
-```
 
 ## Recommendations
 

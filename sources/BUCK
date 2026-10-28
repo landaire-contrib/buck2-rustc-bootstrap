@@ -1,0 +1,47 @@
+load("//crates.io:crate_download.bzl", "crate_download")
+load(":defs.bzl", "rust_checkout", "rust_source_files", "rust_version_flags")
+
+# The Rust fork and the library/backtrace submodule at the commit that the
+# fork records for it.
+_RUST_COMMIT = "e52263c3cec8ece1b4b0ff1b00d56c0b5218d498"
+
+_BACKTRACE_COMMIT = "d902726a1dcdc1e1c66f73d1162181b5423c645b"
+
+crate_download(
+    name = "rust",
+    sha256 = "6704c8d705c1f001669af05ef22d2ba657f2147ec62bf6f9a8ac23e2f99931d4",
+    size_bytes = 39206804,
+    strip_prefix = "rust-" + _RUST_COMMIT,
+    urls = ["https://github.com/landaire/rust/archive/{}.tar.gz".format(_RUST_COMMIT)],
+    visibility = ["PUBLIC"],
+)
+
+crate_download(
+    name = "backtrace",
+    sha256 = "51fc2a0f549f1f57594c310885c59c2f1ecf86cc13169a0193819fd80bda2ffb",
+    size_bytes = 99341,
+    strip_prefix = "backtrace-rs-" + _BACKTRACE_COMMIT,
+    urls = ["https://github.com/rust-lang/backtrace-rs/archive/{}.tar.gz".format(_BACKTRACE_COMMIT)],
+    visibility = ["PUBLIC"],
+)
+
+rust_source_files(
+    name = "tree",
+    paths = ["src/stage0"],
+    visibility = ["//stage0:"],
+)
+
+rust_version_flags(
+    name = "version-flags",
+    version_suffix = select({
+        "//constraints:stage1": "(buckified stage1)",
+        "//constraints:stage2": "(buckified stage2)",
+    }),
+    visibility = ["PUBLIC"],
+)
+
+# The complete source tree, for `reindeer buckify`:
+# `buck2 build sources:checkout --out rust`.
+rust_checkout(
+    name = "checkout",
+)

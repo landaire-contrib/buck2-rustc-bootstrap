@@ -15,7 +15,7 @@ keep_stage(
     libs = glob([last1 + "/lib/rustlib/*/lib/lib*.rlib"]),
     llvm = glob([last1 + "/lib/*"]),
     rustc = glob([last1 + "/bin/rustc"]),
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
 )
 
 keep_stage(
@@ -23,5 +23,5 @@ keep_stage(
     libs = glob([last2 + "/lib/rustlib/*/lib/lib*.rlib"]),
     llvm = glob([last2 + "/lib/*"]),
     rustc = glob([last2 + "/bin/rustc"]),
-    visibility = ["toolchains//:rust"],
+    visibility = ["//toolchains:rust"],
 )

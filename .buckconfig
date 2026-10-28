@@ -1,7 +1,9 @@
+# When a project includes this repository as a cell, only [cell_aliases]
+# applies; that project declares the cells (see README.md).
 [cells]
 rust = .
 prelude = prelude
-toolchains = toolchains
+toolchains = cells/toolchains
 none = none
 
 [external_cells]
@@ -16,7 +18,8 @@ fbsource = none
 digest_algorithms = SHA256
 
 [project]
-ignore = .git, rust/build, rust/node_modules, rust/target
+# rust/ holds the source checkout for `reindeer buckify`.
+ignore = .git, rust
 
 [build]
 execution_platforms = rust//platforms:execution
