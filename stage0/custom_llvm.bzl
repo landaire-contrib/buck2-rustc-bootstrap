@@ -4,8 +4,8 @@ load("@prelude//toolchains:cxx.bzl", "CxxToolsInfo")
 load("//stage1:defs.bzl", "RustDistInfo")
 
 # The LLVM fork that the compiler links, as a GitHub archive of the commit.
-_LLVM_COMMIT = "2f714b11080e5a449de3969e3c4477cf5cbe92ab"
-_LLVM_SHA256 = "8d4579b814101ca9b321fdce9204da11b3c9530ee7f173d04f2e06305cb0a515"
+_LLVM_COMMIT = "215459da4cbf942ce74ace2536fa0aa98ccf95a6"
+_LLVM_SHA256 = "191f064c27b4c4093f9aa5b670156656b61b8424d97dc4a74afd201995b2a438"
 
 # The build tools of the LLVM build, for x86_64 Linux.
 _CMAKE_VERSION = "3.31.8"
