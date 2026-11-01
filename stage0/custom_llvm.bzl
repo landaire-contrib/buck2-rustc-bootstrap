@@ -4,8 +4,8 @@ load("@prelude//toolchains:cxx.bzl", "CxxToolsInfo")
 load("//stage1:defs.bzl", "RustDistInfo")
 
 # The LLVM fork that the compiler links, as a GitHub archive of the commit.
-_LLVM_COMMIT = "215459da4cbf942ce74ace2536fa0aa98ccf95a6"
-_LLVM_SHA256 = "191f064c27b4c4093f9aa5b670156656b61b8424d97dc4a74afd201995b2a438"
+_LLVM_COMMIT = "6184f76016c590ca1ddeafa568454eb379391b79"
+_LLVM_SHA256 = "ef2688b0bc24e84813cdc04c565085f6ff0e793c32f6bb55d778206e770e80ad"
 
 # The build tools of the LLVM build, for x86_64 Linux.
 _CMAKE_VERSION = "3.31.8"
@@ -86,7 +86,7 @@ def custom_llvm(name, jobs, visibility, incoming_transition, cache = ""):
         name = name + "-source",
         sha256 = _LLVM_SHA256,
         strip_prefix = "llvm-project-" + _LLVM_COMMIT,
-        urls = ["https://github.com/landaire/llvm-project/archive/" + _LLVM_COMMIT + ".tar.gz"],
+        urls = ["https://github.com/landaire-contrib/llvm-project/archive/" + _LLVM_COMMIT + ".tar.gz"],
     )
     native.http_archive(
         name = name + "-cmake",
