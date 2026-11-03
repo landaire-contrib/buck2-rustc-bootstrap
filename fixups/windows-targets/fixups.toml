@@ -1,0 +1,3 @@
+# Link the Windows APIs without the import library that the build script of
+# windows_x86_64_msvc would add to the search path.
+cfgs = ["windows_raw_dylib"]

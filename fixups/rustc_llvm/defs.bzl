@@ -2,7 +2,7 @@ def _llvm_config_impl(ctx: AnalysisContext) -> list[Provider]:
     llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
     llvm_bin = llvm.project("bin")
     llvm_lib = llvm.project("lib")
-    llvm_config = llvm_bin.project("llvm-config").with_associated_artifacts([llvm_lib])
+    llvm_config = llvm_bin.project("llvm-config" + ctx.attrs._exe_suffix).with_associated_artifacts([llvm_lib])
     return [
         DefaultInfo(default_output = llvm_config),
         RunInfo(llvm_config),
@@ -18,7 +18,13 @@ llvm_install = rule(
 
 llvm_config = rule(
     impl = _llvm_config_impl,
-    attrs = {"llvm": attrs.dep()},
+    attrs = {
+        "llvm": attrs.dep(),
+        "_exe_suffix": attrs.default_only(attrs.string(default = select({
+            "DEFAULT": "",
+            "prelude//os:windows": ".exe",
+        }))),
+    },
 )
 
 def _rustc_cfg_llvm_component_impl(
@@ -70,15 +76,24 @@ llvm_rustc_flags = rule(
     },
 )
 
+def _is_preprocessor_flag(flag: str) -> bool:
+    return flag[:2] in ["-I", "-D", "/I", "/D"]
+
 def _cxx_flags_impl(
         actions: AnalysisActions,
         llvm_config_cxxflags: ArtifactValue,
+        msvc: bool,
         output: OutputArtifact) -> list[Provider]:
     flags = []
     for flag in llvm_config_cxxflags.read_string().split():
-        if flag.startswith("-std=") or flag.startswith("-stdlib=") or flag.startswith("-f"):
+        if _is_preprocessor_flag(flag):
+            continue
+
+        # The flags of an LLVM that cl.exe built: language, exception and
+        # warning options, all meant for the code that includes its headers.
+        if msvc or flag.startswith("-std=") or flag.startswith("-stdlib=") or flag.startswith("-f"):
             flags.append(flag + "\n")
-        elif not (flag.startswith("-I") or flag.startswith("-D")):
+        else:
             fail("unrecognized llvm flag:", repr(flag))
     actions.write(output, "".join(flags))
     return []
@@ -87,6 +102,7 @@ _cxx_flags = dynamic_actions(
     impl = _cxx_flags_impl,
     attrs = {
         "llvm_config_cxxflags": dynattrs.artifact_value(),
+        "msvc": dynattrs.value(bool),
         "output": dynattrs.output(),
     },
 )
@@ -107,16 +123,23 @@ def _llvm_cxx_flags_impl(ctx: AnalysisContext) -> list[Provider]:
     ctx.actions.dynamic_output_new(
         _cxx_flags(
             llvm_config_cxxflags = llvm_config_cxxflags,
+            msvc = ctx.attrs._msvc,
             output = cxx_flags.as_output(),
         ),
     )
 
     return [DefaultInfo(default_output = cxx_flags)]
 
+_MSVC = select({
+    "DEFAULT": False,
+    "prelude//os:windows": True,
+})
+
 llvm_cxx_flags = rule(
     impl = _llvm_cxx_flags_impl,
     attrs = {
         "host_llvm_config": attrs.exec_dep(providers = [RunInfo]),
+        "_msvc": attrs.default_only(attrs.bool(default = _MSVC)),
         "_redirect_stdout": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "prelude//rust/tools:redirect_stdout")),
     },
 )
@@ -127,7 +150,7 @@ def _preprocessor_flags_impl(
         output: OutputArtifact) -> list[Provider]:
     flags = []
     for flag in llvm_config_cxxflags.read_string().split():
-        if flag.startswith("-D"):
+        if flag.startswith("-D") or flag.startswith("/D"):
             flags.append(flag + "\n")
     actions.write(output, "".join(flags))
     return []
@@ -174,6 +197,7 @@ def _run_llvm_config_for_linker_flags_impl(
         actions: AnalysisActions,
         host_llvm_config: RunInfo,
         link_type: ArtifactValue,
+        msvc: bool,
         output: OutputArtifact,
         redirect_stdout: RunInfo) -> list[Provider]:
     link_type = link_type.read_string().strip()
@@ -184,8 +208,11 @@ def _run_llvm_config_for_linker_flags_impl(
     else:
         fail("unknown LLVM link type:", link_type)
 
+    # The import libraries of the Windows APIs that LLVM uses. Other hosts
+    # get theirs from the C++ toolchain.
+    system_libs = ["--system-libs"] if msvc else []
     actions.run(
-        [redirect_stdout, output, host_llvm_config, "--libs", link_type_flags],
+        [redirect_stdout, output, host_llvm_config, "--libs", link_type_flags, system_libs],
         category = "llvm_config",
     )
     return []
@@ -195,6 +222,7 @@ _run_llvm_config_for_linker_flags = dynamic_actions(
     attrs = {
         "host_llvm_config": dynattrs.value(RunInfo),
         "link_type": dynattrs.artifact_value(),
+        "msvc": dynattrs.value(bool),
         "output": dynattrs.output(),
         "redirect_stdout": dynattrs.value(RunInfo),
     },
@@ -235,6 +263,7 @@ def _llvm_linker_flags_impl(ctx: AnalysisContext) -> list[Provider]:
         _run_llvm_config_for_linker_flags(
             host_llvm_config = ctx.attrs.host_llvm_config[RunInfo],
             link_type = link_type,
+            msvc = ctx.attrs._msvc,
             output = llvm_config_libs.as_output(),
             redirect_stdout = ctx.attrs._redirect_stdout[RunInfo],
         ),
@@ -256,6 +285,7 @@ llvm_linker_flags = rule(
         "host_llvm_config": attrs.exec_dep(providers = [RunInfo]),
         "target_llvm": attrs.exec_dep(),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
+        "_msvc": attrs.default_only(attrs.bool(default = _MSVC)),
         "_redirect_stdout": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "prelude//rust/tools:redirect_stdout")),
     },
 )

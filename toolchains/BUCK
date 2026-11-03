@@ -23,10 +23,18 @@ cxx_toolchain(
             "-isysroot",
             "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
         ],
+        # The C runtime DLL, as Rust and the LLVM libraries use.
+        "prelude//os:windows": ["/MD"],
     }) + select({
         "DEFAULT": [],
-        "//constraints:opt-level=0": ["-O0"],
-        "//constraints:opt-level=3": ["-O3"],
+        "//constraints:opt-level=0": select({
+            "DEFAULT": ["-O0"],
+            "prelude//os:windows": ["/Od"],
+        }),
+        "//constraints:opt-level=3": select({
+            "DEFAULT": ["-O3"],
+            "prelude//os:windows": ["/O2"],
+        }),
     }),
     cxx_flags = select({
         "DEFAULT": [],
@@ -35,10 +43,17 @@ cxx_toolchain(
             "-isysroot",
             "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
         ],
+        "prelude//os:windows": ["/MD"],
     }) + select({
         "DEFAULT": [],
-        "//constraints:opt-level=0": ["-O0"],
-        "//constraints:opt-level=3": ["-O3"],
+        "//constraints:opt-level=0": select({
+            "DEFAULT": ["-O0"],
+            "prelude//os:windows": ["/Od"],
+        }),
+        "//constraints:opt-level=3": select({
+            "DEFAULT": ["-O3"],
+            "prelude//os:windows": ["/O2"],
+        }),
     }),
     linker_flags = select({
         "DEFAULT": [],

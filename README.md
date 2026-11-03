@@ -96,10 +96,13 @@ $ reindeer buckify
 
 `stage0/custom_llvm.bzl` pins the LLVM fork, and the CMake and Ninja that
 build it, as SHA-256-checked archives. LLVM uses its CMake/Ninja build in one
-local action, with the host's `cc` and `c++` from `PATH`, so it builds only on
-x86_64 Linux and its result is never uploaded to a cache; the other platforms
-stop during analysis. On Linux the compiler's C++ code is compiled and linked
-with the clang of that LLVM. Every action of this branch runs locally.
+local action, so it builds only on the hosts that those archives exist for
+(x86_64 Linux, arm64 macOS and x86_64 Windows) and its result is never
+uploaded to a cache; the other platforms stop during analysis. Linux and
+macOS build it with the host's `cc` and `c++` from `PATH`. Windows builds it
+with the `cl.exe` that `prelude//toolchains/msvc` finds. On Linux the
+compiler's C++ code is compiled and linked with the clang of that LLVM. Every
+action of this branch runs locally.
 
 The host C and C++ toolchain (compilers, linker, archiver, headers and C++
 runtime) is an undeclared input of that action: Buck does not track it, so a
@@ -112,7 +115,8 @@ The CMake build tree persists in
 but not by the LLVM sources: the CMake flags; the CMake, Ninja and Python
 versions; and the SHA-256 of the host `cc`, `c++`, `cc1`, `cc1plus`, `ld`,
 `ar`, `ranlib` and the `libstdc++.so` that `c++` links, resolved through the
-action's `PATH`. Headers are not part of the key. A changed LLVM archive is
+action's `PATH`, or of `cl.exe`, `link.exe` and `lib.exe` on Windows. Headers
+are not part of the key. A changed LLVM archive is
 mirrored into the tree without touching unchanged files, so Ninja rebuilds
 only what the change affects. Trees of other keys are removed. Each build
 installs into a fresh Buck output. Set the location and the job count in the

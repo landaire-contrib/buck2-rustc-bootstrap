@@ -1,8 +1,40 @@
 load("@prelude//http_archive:exec_deps.bzl", "HttpArchiveExecDeps")
 load("@prelude//http_archive:unarchive.bzl", "unarchive")
-load("@prelude//os_lookup:defs.bzl", "OsLookup")
+load("@prelude//os_lookup:defs.bzl", "Os", "OsLookup")
 load("@prelude//rust:targets.bzl", "targets")
 load("//stage1:defs.bzl", "RustDistInfo")
+
+def _unpack_xz(ctx: AnalysisContext, archive: Artifact, name: str) -> Artifact:
+    """The contents of the .tar.xz `archive`."""
+    exec_deps = ctx.attrs._exec_deps[HttpArchiveExecDeps]
+    if exec_deps.exec_os_type[OsLookup].os != Os("windows"):
+        contents, _ = unarchive(
+            ctx = ctx,
+            archive = archive,
+            output_name = name,
+            ext_type = "tar.xz",
+            excludes = [],
+            strip_prefix = None,
+            exec_deps = exec_deps,
+            prefer_local = False,
+            sub_targets = {},
+        )
+        return contents
+
+    # The tar.exe of Windows reads xz through an external xz program, which
+    # it either does not find or deadlocks on.
+    contents = ctx.actions.declare_output(name, dir = True)
+    ctx.actions.run(
+        [
+            ctx.attrs._frob[RunInfo],
+            cmd_args(archive, format = "archive={}"),
+            cmd_args(contents.as_output(), format = "contents={}"),
+            ["--untar", "{archive}", "{contents}"],
+        ],
+        category = "untar",
+        identifier = name,
+    )
+    return contents
 
 Stage0Info = provider(
     fields = {
@@ -136,17 +168,7 @@ stage0_download = rule(
 def _stage0_extract_impl(ctx: AnalysisContext) -> list[Provider]:
     sub_targets = {}
     for name, dist in ctx.attrs.dist[DefaultInfo].sub_targets.items():
-        contents, _ = unarchive(
-            ctx = ctx,
-            archive = dist[DefaultInfo].default_outputs[0],
-            output_name = name,
-            ext_type = "tar.xz",
-            excludes = [],
-            strip_prefix = None,
-            exec_deps = ctx.attrs._exec_deps[HttpArchiveExecDeps],
-            prefer_local = False,
-            sub_targets = {},
-        )
+        contents = _unpack_xz(ctx, dist[DefaultInfo].default_outputs[0], name)
         sub_targets[name] = [DefaultInfo(default_output = contents)]
 
     return [DefaultInfo(sub_targets = sub_targets)]
@@ -156,6 +178,7 @@ stage0_extract = rule(
     attrs = {
         "dist": attrs.dep(),
         "_exec_deps": attrs.default_only(attrs.exec_dep(providers = [HttpArchiveExecDeps], default = "//platforms/exec:http_archive")),
+        "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
     },
     supports_incoming_transition = True,
 )
@@ -163,13 +186,15 @@ stage0_extract = rule(
 def _stage0_executable_impl(ctx: AnalysisContext) -> list[Provider]:
     dist = ctx.attrs.dist[DefaultInfo].default_outputs[0]
     overlay = ctx.actions.declare_output("dist", dir = True)
+    windows = ctx.attrs._exec_os_type[OsLookup].os == Os("windows")
+    exe = ctx.label.name + (".exe" if windows else "")
 
     hidden = []
     frob = [
         ctx.attrs._frob[RunInfo],
         cmd_args(dist, format = "dist={}"),
         cmd_args(overlay.as_output(), format = "overlay={}"),
-        "exe={}".format(ctx.label.name),
+        "exe={}".format(exe),
         ["--basename", "toplevel={dist}/?"],
         ["--read", "component={dist}/{toplevel}/components"],
         ["--mkdir", "{overlay}"],
@@ -186,6 +211,18 @@ def _stage0_executable_impl(ctx: AnalysisContext) -> list[Provider]:
             ["--read", "component={overlay}/{libdir}/{toplevel}/components"],
             ["--symlink", "{libdir}/{toplevel}/{component}/lib", "{overlay}/lib"],
         ])
+        if windows:
+            # Windows finds the compiler's DLLs beside the executable.
+            frob.append(["--overlay", "{overlay}/{libdir}/{toplevel}/{component}/bin", "{overlay}/bin"])
+    elif windows:
+        # Windows finds the DLLs beside the executable that it starts, not
+        # beside the target of a symlink.
+        hidden.append(dist)
+        frob.extend([
+            ["--overlay", "{dist}/{toplevel}/{component}/bin", "{overlay}/bin"],
+            cmd_args(dist, format = "relative={}", relative_to = overlay),
+            ["--symlink", "{relative}/{toplevel}/{component}/lib", "{overlay}/lib"],
+        ])
     else:
         hidden.append(dist)
         frob.extend([
@@ -195,7 +232,7 @@ def _stage0_executable_impl(ctx: AnalysisContext) -> list[Provider]:
 
     ctx.actions.run(frob, category = "dist")
 
-    command = overlay.project("bin").project(ctx.label.name).with_associated_artifacts([overlay] + hidden)
+    command = overlay.project("bin").project(exe).with_associated_artifacts([overlay] + hidden)
 
     if ctx.attrs.env:
         command = cmd_args(
@@ -217,6 +254,7 @@ stage0_executable = rule(
         "env": attrs.dict(key = attrs.string(), value = attrs.string(), default = {}),
         "libdir": attrs.option(attrs.dep(), default = None),
         "_exec": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:exec")),
+        "_exec_os_type": attrs.default_only(attrs.dep(providers = [OsLookup], default = "//platforms/exec:os_lookup")),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
     },
     supports_incoming_transition = True,
@@ -225,17 +263,7 @@ stage0_executable = rule(
 def _stage0_sysroot_impl(ctx: AnalysisContext) -> list[Provider]:
     dist = ctx.attrs.dist[DefaultInfo].default_outputs[0]
 
-    contents, _ = unarchive(
-        ctx = ctx,
-        archive = dist,
-        output_name = "dist",
-        ext_type = "tar.xz",
-        excludes = [],
-        strip_prefix = None,
-        exec_deps = ctx.attrs._exec_deps[HttpArchiveExecDeps],
-        prefer_local = False,
-        sub_targets = {},
-    )
+    contents = _unpack_xz(ctx, dist, "dist")
 
     sysroot = ctx.actions.declare_output("sysroot")
     ctx.actions.run(

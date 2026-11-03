@@ -10310,10 +10310,10 @@ cxx_bootstrap_library(
         "rust/compiler/rustc_llvm/llvm-wrapper/LLVMWrapper.h",
         "rust/compiler/rustc_llvm/llvm-wrapper/SuppressLLVMWarnings.h",
     ],
-    compiler_flags = ["--config=$(location //fixups/rustc_llvm:cxx-flags)"],
+    compiler_flags = ["@$(location //fixups/rustc_llvm:cxx-flags)"],
     preprocessor_flags = [
         "-I$(location //fixups/rustc_llvm:llvm-install)/include",
-        "--config=$(location //fixups/rustc_llvm:preprocessor-flags)",
+        "@$(location //fixups/rustc_llvm:preprocessor-flags)",
     ],
     visibility = [],
     deps = ["//fixups/rustc_llvm:llvm"],
@@ -13458,6 +13458,10 @@ rust_bootstrap_library(
             ],
         ),
     },
+    rustc_flags = select({
+        "DEFAULT": [],
+        "prelude//os:windows": ["-Zlink-directives=no"],
+    }),
     visibility = [],
     deps = [
         ":cfg-if-1",
@@ -16889,6 +16893,7 @@ rust_bootstrap_library(
             deps = [":windows_x86_64_msvc-0.52"],
         ),
     },
+    rustc_flags = ["--cfg=windows_raw_dylib"],
     visibility = [],
 )
 

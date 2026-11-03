@@ -45,10 +45,13 @@ llvm_linker_flags(
 
 prebuilt_cxx_library(
     name = "llvm",
-    exported_linker_flags = [
-        "-L$(location :llvm-install)/lib",
-        "-lz",
-        "@$(location :linker-flags)",
-    ],
+    # On Windows, llvm-config names the libraries by their paths.
+    exported_linker_flags = select({
+        "DEFAULT": [
+            "-L$(location :llvm-install)/lib",
+            "-lz",
+        ],
+        "prelude//os:windows": [],
+    }) + ["@$(location :linker-flags)"],
     visibility = ["//:rustc_llvm-0.0.0-llvm-wrapper-compile"],
 )

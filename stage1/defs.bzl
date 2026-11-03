@@ -27,6 +27,7 @@ RustDistInfo = provider(fields = {
 def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
     llvm = ctx.attrs.llvm[DefaultInfo].default_outputs[0]
     exe = ctx.attrs.exe[DefaultInfo].default_outputs[0]
+    name = ctx.label.name + ctx.attrs._exe_suffix
 
     dist = ctx.actions.declare_output("toolchain", dir = True)
     ctx.actions.run(
@@ -37,13 +38,13 @@ def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
             cmd_args(dist.as_output(), format = "dist={}"),
             ["--mkdir", "{dist}"],
             ["--mkdir", "{dist}/bin"],
-            ["--cp", "{exe}", "{dist}/bin/" + ctx.label.name],
+            ["--cp", "{exe}", "{dist}/bin/" + name],
             ["--symlink", "{llvm}/lib", "{dist}/lib"],
         ],
         category = "dist",
     )
 
-    tool = dist.project("bin").project(ctx.label.name).with_associated_artifacts([dist])
+    tool = dist.project("bin").project(name).with_associated_artifacts([dist])
 
     return [
         DefaultInfo(
@@ -54,7 +55,7 @@ def _rust_tool_impl(ctx: AnalysisContext) -> list[Provider]:
             },
         ),
         RunInfo(tool),
-        RustDistInfo(artifacts = {"bin/" + ctx.label.name: exe}),
+        RustDistInfo(artifacts = {"bin/" + name: exe}),
     ]
 
 rust_tool = rule(
@@ -62,6 +63,10 @@ rust_tool = rule(
     attrs = {
         "exe": attrs.dep(),
         "llvm": attrs.exec_dep(),
+        "_exe_suffix": attrs.default_only(attrs.string(default = select({
+            "DEFAULT": "",
+            "prelude//os:windows": ".exe",
+        }))),
         "_frob": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//stage0:frob")),
     },
     supports_incoming_transition = True,

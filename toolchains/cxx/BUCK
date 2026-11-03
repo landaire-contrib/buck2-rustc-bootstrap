@@ -1,4 +1,5 @@
 load("//constraints:defs.bzl", "configuration_transition")
+load("//toolchains:cxx.bzl", "msvc_tools")
 
 # Transition to share identical C++ compilations between stage1 and stage2.
 configuration_transition(
@@ -19,4 +20,15 @@ prebuilt_cxx_library(
         "prelude//os:macos": ["-lc++"],
     }),
     visibility = ["PUBLIC"],
+)
+
+python_bootstrap_binary(
+    name = "flatten_argsfiles",
+    main = "flatten_argsfiles.py",
+)
+
+msvc_tools(
+    name = "msvc_tools",
+    target_compatible_with = ["prelude//os:windows"],
+    visibility = ["//toolchains:cxx"],
 )

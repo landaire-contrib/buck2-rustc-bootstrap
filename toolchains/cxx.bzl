@@ -15,19 +15,58 @@ load(
 load("@prelude//cxx:headers.bzl", "HeaderMode")
 load("@prelude//linking:link_info.bzl", "LinkStyle")
 load("@prelude//linking:lto.bzl", "LtoMode")
-load("@prelude//os_lookup:defs.bzl", "Os", "OsLookup")
+load("@prelude//os_lookup:defs.bzl", "Os", "OsLookup", "ScriptLanguage")
 load("@prelude//toolchains:cxx.bzl", "CxxToolsInfo")
+load("@prelude//utils:cmd_script.bzl", "cmd_script")
 load("//toolchains/target:target_triple.bzl", "TargetTriple")
 
 def _default_cxx_tools():
     if host_info().os.is_windows:
-        return "prelude//toolchains/msvc:msvc_tools"
+        return "//toolchains/cxx:msvc_tools"
 
     # The compiler's C++ code is built with the clang of the LLVM that it
     # links.
     if host_info().os.is_linux:
         return "//stage0:ci_llvm-cxx-tools"
     return "prelude//toolchains/cxx/clang:path_clang_tools"
+
+def _msvc_tools_impl(ctx: AnalysisContext) -> list[Provider]:
+    tools = ctx.attrs.msvc_tools[CxxToolsInfo]
+
+    def flattened(name, compiler):
+        return cmd_script(
+            actions = ctx.actions,
+            name = name,
+            cmd = cmd_args(ctx.attrs._flatten_argsfiles[RunInfo], compiler),
+            language = ScriptLanguage("bat"),
+        )
+
+    return [
+        DefaultInfo(),
+        CxxToolsInfo(
+            compiler = flattened("cl", tools.compiler),
+            compiler_type = tools.compiler_type,
+            cxx_compiler = flattened("cl_cxx", tools.cxx_compiler),
+            asm_compiler = tools.asm_compiler,
+            asm_compiler_type = tools.asm_compiler_type,
+            rc_compiler = tools.rc_compiler,
+            cvtres_compiler = tools.cvtres_compiler,
+            archiver = tools.archiver,
+            archiver_type = tools.archiver_type,
+            linker = tools.linker,
+            linker_type = tools.linker_type,
+        ),
+    ]
+
+# The MSVC tools, with compilers that read the response files that compiler
+# flags name inside the prelude's argsfiles.
+msvc_tools = rule(
+    impl = _msvc_tools_impl,
+    attrs = {
+        "msvc_tools": attrs.exec_dep(providers = [CxxToolsInfo], default = "prelude//toolchains/msvc:msvc_tools"),
+        "_flatten_argsfiles": attrs.default_only(attrs.exec_dep(providers = [RunInfo], default = "//toolchains/cxx:flatten_argsfiles")),
+    },
+)
 
 def _cxx_toolchain_impl(ctx: AnalysisContext):
     target = ctx.attrs._target_os_type[OsLookup]
@@ -81,6 +120,10 @@ def _cxx_toolchain_impl(ctx: AnalysisContext):
                 use_archiver_flags = True,
                 shlib_interfaces = ShlibInterfacesMode("disabled"),
                 link_style = LinkStyle("shared"),
+                # The prelude links a Rust library DLL with the `deffile`
+                # attribute of cxx_library, which rust_library lacks. Rust
+                # libraries are archives on Windows instead.
+                supports_shared_libraries = target.os != Os("windows"),
                 binary_extension = binary_extension,
                 object_file_extension = object_file_extension,
                 static_library_extension = static_library_extension,

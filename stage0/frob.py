@@ -2,6 +2,7 @@
 
 import shutil
 import sys
+import tarfile
 from pathlib import Path
 
 
@@ -41,7 +42,8 @@ if __name__ == "__main__":
             link.unlink()
             link.mkdir()
             for f in (link.parent / target).iterdir():
-                (link / f.name).symlink_to(".." / target / f.name)
+                # Windows distinguishes symlinks to directories.
+                (link / f.name).symlink_to(".." / target / f.name, target_is_directory=f.is_dir())
         elif instruction == "--mkdir":
             parse(next(argv)).mkdir()
         elif instruction == "--overlay":
@@ -57,6 +59,10 @@ if __name__ == "__main__":
                 symbols[name] = f.read().strip()
         elif instruction == "--symlink":
             target, link = parse(next(argv)), parse(next(argv))
-            link.symlink_to(target)
+            link.symlink_to(target, target_is_directory=(link.parent / target).is_dir())
+        elif instruction == "--untar":
+            archive, dest = parse(next(argv)), parse(next(argv))
+            with tarfile.open(archive) as source:
+                source.extractall(dest, filter="tar")
         else:
             raise RuntimeError(instruction)
