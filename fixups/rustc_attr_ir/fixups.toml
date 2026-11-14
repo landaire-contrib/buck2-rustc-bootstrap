@@ -1,0 +1,1 @@
+extra_srcs = ["../../tests/ui/attributes/doc_examples/*"]

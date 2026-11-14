@@ -3,6 +3,7 @@ extra_deps = [
     ":rustc_arena-0.0.0",
     ":rustc_ast-0.0.0",
     ":rustc_ast_pretty-0.0.0",
+    ":rustc_attr_ir-0.0.0",
     ":rustc_data_structures-0.0.0",
     ":rustc_errors-0.0.0",
     ":rustc_hir-0.0.0",
@@ -18,6 +19,7 @@ extra_deps = [
     ":rustc_resolve-0.0.0",
     ":rustc_session-0.0.0",
     ":rustc_span-0.0.0",
+    ":rustc_structures-0.0.0",
     ":rustc_target-0.0.0",
     ":rustc_trait_selection-0.0.0",
 ]

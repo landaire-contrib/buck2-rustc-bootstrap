@@ -28,6 +28,7 @@ extra_deps = [
     ":rustc_serialize-0.0.0",
     ":rustc_session-0.0.0",
     ":rustc_span-0.0.0",
+    ":rustc_structures-0.0.0",
     ":rustc_target-0.0.0",
     ":rustc_trait_selection-0.0.0",
 ]

@@ -82,7 +82,7 @@ default stage1 target platform with the corresponding stage2 one.
 
 ### Sources
 
-The `xbox360-rust-1.98` branch has no submodules. `sources/BUCK` downloads the
+The `xbox360-rust-1.100` branch has no submodules. `sources/BUCK` downloads the
 Rust fork and its `library/backtrace` submodule as archives pinned by SHA-256,
 and the paths under `rust/` in the generated `BUCK` name files of that tree.
 `reindeer buckify` needs the tree on disk:

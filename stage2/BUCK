@@ -28,7 +28,7 @@ rust_tool(
 
 rust_tool(
     name = "rustdoc",
-    exe = "//:rustdoc-tool-rustdoc_tool_binary",
+    exe = "//:rustdoc-tool-rustdoc-tool-binary",
     incoming_transition = "//platforms/stage2:compiler",
     llvm = "//stage0:ci_llvm",
     visibility = ["//toolchains:rust"],

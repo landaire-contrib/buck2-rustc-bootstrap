@@ -2,6 +2,7 @@ cargo_env = ["CARGO_PKG_VERSION_PATCH"]
 extra_deps = [
     ":rustc_abi-0.0.0",
     ":rustc_ast-0.0.0",
+    ":rustc_attr_ir-0.0.0",
     ":rustc_attr_parsing-0.0.0",
     ":rustc_const_eval-0.0.0",
     ":rustc_data_structures-0.0.0",
